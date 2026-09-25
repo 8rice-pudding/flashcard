@@ -1132,8 +1132,6 @@
 
     <script>
       (function () {
-        const STORAGE_KEY = 'flashcard-words-v1';
-
         function formatDate(date) {
           const year = date.getFullYear();
           const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -1261,30 +1259,118 @@
           }));
         }
 
-        function loadWords() {
+        function mapCloudRowToCard(row, index = 0) {
+          const source = row || {};
+          const type = source.type === 'image' || source.imageDataUrl ? 'image' : 'word';
+          const wordValue = String(source.word || source.english || source.name || '').trim();
+          const englishValue = String(source.english || source.word || source.name || '').trim();
+          const chineseValue = String(source.chinese || source.translation || source.meaning || '').trim();
+          const meaningValue = String(source.meaning || source.chinese || source.translation || '').trim();
+
+          return normalizeCard({
+            ...source,
+            id: source.id ?? `word-${Date.now()}-${index + 1}`,
+            type,
+            word: wordValue || `word-${index + 1}`,
+            english: englishValue || wordValue || `word-${index + 1}`,
+            chinese: chineseValue || meaningValue,
+            meaning: meaningValue || chineseValue,
+            sentence: source.sentence || '',
+            sentenceCn: source.sentenceCn || '',
+            imageDataUrl: source.imageDataUrl || '',
+            pronunciation: source.pronunciation || '',
+            box: Number(source.box) || 1,
+            nextReviewDate: source.nextReviewDate || getTodayString()
+          }, index);
+        }
+
+        function getStableCloudId(card) {
+          if (typeof card?.id === 'number' && Number.isFinite(card.id)) {
+            return card.id;
+          }
+
+          const idValue = String(card?.id || card?.word || `seed-${Math.random()}`);
+          let hash = 0;
+
+          for (let index = 0; index < idValue.length; index += 1) {
+            hash = (hash * 31 + idValue.charCodeAt(index)) >>> 0;
+          }
+
+          return (hash % 2147483647) + 1;
+        }
+
+        async function loadWords() {
           try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) {
-              const defaultWords = loadDefaultWords();
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultWords));
-              return defaultWords;
+            const response = await fetch('/api/words', { cache: 'no-store' });
+            if (!response.ok) {
+              throw new Error('fetch words failed');
             }
 
-            const parsed = JSON.parse(raw);
-            if (!Array.isArray(parsed)) {
-              throw new Error('words is not array');
+            const payload = await response.json();
+            const rows = Array.isArray(payload) ? payload : Array.isArray(payload.items) ? payload.items : [];
+            if (!rows.length) {
+              return [];
             }
 
-            return parsed.map((item, index) => normalizeCard(item, index));
+            return rows.map((item, index) => mapCloudRowToCard(item, index));
           } catch (error) {
-            const defaultWords = loadDefaultWords();
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultWords));
-            return defaultWords;
+            console.warn('Failed to load words from cloud:', error);
+            return [];
           }
         }
 
-        function saveWords() {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.words));
+        async function saveWords() {
+          if (!Array.isArray(state.words)) {
+            return;
+          }
+
+          try {
+            const payload = state.words.map((card) => ({
+              id: getStableCloudId(card),
+              type: card.type || 'word',
+              word: card.word || card.english || '',
+              english: card.english || card.word || '',
+              chinese: card.chinese || card.meaning || '',
+              meaning: card.meaning || card.chinese || '',
+              translation: card.chinese || card.meaning || '',
+              sentence: card.sentence || '',
+              sentenceCn: card.sentenceCn || '',
+              imageDataUrl: card.imageDataUrl || '',
+              pronunciation: card.pronunciation || '',
+              box: Number(card.box) || 1,
+              nextReviewDate: card.nextReviewDate || getTodayString(),
+              created_at: new Date().toISOString()
+            }));
+
+            const response = await fetch('/api/words', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+              throw new Error('save words failed');
+            }
+          } catch (error) {
+            console.warn('Failed to sync words to cloud:', error);
+          }
+        }
+
+        async function deleteWords(ids = []) {
+          const normalizedIds = [...new Set((ids || []).filter((id) => id !== undefined && id !== null && id !== '').map((id) => Number(id)).filter((id) => Number.isFinite(id)))];
+          if (!normalizedIds.length) {
+            return;
+          }
+
+          const response = await fetch('/api/words', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: normalizedIds })
+          });
+
+          if (!response.ok) {
+            throw new Error('delete words failed');
+          }
         }
 
         function getCardSpeechText(card) {
@@ -1391,7 +1477,7 @@
           renderCard();
         }
 
-        function handleReview(remembered) {
+        async function handleReview(remembered) {
           if (!state.currentCard) return;
 
           const card = state.currentCard;
@@ -1403,7 +1489,7 @@
             card.nextReviewDate = formatDate(addDays(new Date(), 1));
           }
 
-          saveWords();
+          await saveWords();
 
           if (state.reviewAllMode) {
             const idx = state.reviewAllQueue.indexOf(card);
@@ -1512,19 +1598,27 @@
           editorModal.setAttribute('aria-hidden', 'true');
         }
 
-        function saveLibrary() {
+        async function saveLibrary() {
+          const removedIds = state.words
+            .filter((item) => !state.libraryDraft.some((entry) => entry.id === item.id))
+            .map((item) => getStableCloudId(item));
+
           state.words = state.libraryDraft.map((item) => {
             const cleanItem = { ...item };
             delete cleanItem._editing;
             return normalizeCard(cleanItem, 0);
           });
-          saveWords();
+
+          await saveWords();
+          if (removedIds.length) {
+            await deleteWords(removedIds);
+          }
           if (state.reviewAllMode) state.reviewAllQueue = state.words.slice();
           closeLibraryEditor();
           loadNextCard();
         }
 
-        function saveNewWordFromModal() {
+        async function saveNewWordFromModal() {
           const english = String(newWordModalEnglishInput.value || '').trim();
           const chinese = String(newWordModalChineseInput.value || '').trim();
           const note = String(newWordModalNoteInput.value || '').trim();
@@ -1550,7 +1644,7 @@
             nextReviewDate: getTodayString()
           }, 0));
 
-          saveWords();
+          await saveWords();
           if (state.reviewAllMode) state.reviewAllQueue = state.words.slice();
           closeNewWordModal();
           loadNextCard();
@@ -1646,7 +1740,7 @@
             }, 0);
 
             state.words.push(card);
-            saveWords();
+            await saveWords();
             if (state.reviewAllMode) state.reviewAllQueue = state.words.slice();
             closeImageCardModal();
             loadNextCard();
@@ -1672,7 +1766,7 @@
         }
 
         const state = {
-          words: loadWords(),
+          words: [],
           currentCard: null,
           isFlipped: false,
           reviewAllMode: false,
@@ -1849,7 +1943,12 @@
           }
         });
 
-        loadNextCard();
+        async function initializeApp() {
+          state.words = await loadWords();
+          loadNextCard();
+        }
+
+        initializeApp();
       })();
     </script>
   </body>
