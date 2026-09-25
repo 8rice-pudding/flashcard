@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>背单词复习卡</title>
+    <style>
+      :root {
+        --bg-1: #1a1a2e;
+        --bg-2: #16213e;
+        --bg-3: #0f172a;
+        --panel: rgba(23, 29, 52, 0.74);
+        --panel-strong: rgba(18, 22, 38, 0.82);
+        --card: rgba(31, 35, 60, 0.78);
+        --card-soft: rgba(54, 69, 106, 0.65);
+        --text: #e8edf9;
+        --muted: #b9bfd7;
+        --muted-soft: #a5adcf;
+        --primary: #6ea8ff;
+        --primary-strong: #4d82ff;
+        --purple: #8d7cff;
+        --purple-strong: #7561ff;
+        --good: #75d7b1;
+        --good-strong: #4ccfa0;
+        --bad: #ff9d7d;
+        --bad-strong: #f47b5f;
+        --shadow: 0 28px 60px rgba(4, 8, 20, 0.42);
+        --shadow-soft: 0 12px 24px rgba(43, 52, 86, 0.28);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: radial-gradient(circle at top, rgba(111, 121, 255, 0.18), transparent 30%),
+          linear-gradient(135deg, var(--bg-1), var(--bg-2));
+        color: var(--text);
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 26px 18px;
+      }
+
+      .app {
+        width: min(92vw, 560px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 22px;
+      }
+
+      .topbar {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 10px 10px 0;
+      }
+
+      .title {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text);
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+
+      .title::before {
+        content: "📘";
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background: rgba(118, 138, 255, 0.15);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+        font-size: 1.2rem;
+      }
+
+      .title-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .title-main {
+        font-size: 1.9rem;
+        line-height: 1.1;
+        letter-spacing: 0.04em;
+        color: var(--text);
+        text-shadow: 0 6px 18px rgba(100, 125, 255, 0.18);
+      }
+
+      .title-sub {
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        color: var(--muted-soft);
+        opacity: 0.8;
+        text-transform: none;
+      }
+
+      .header-actions {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .header-primary-actions,
+      .header-secondary-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .header-secondary-actions {
+        margin-left: auto;
+        padding-left: 12px;
+        border-left: 1px solid rgba(180, 190, 220, 0.22);
+      }
+
+      .secondary-btn {
+        border: 1px solid rgba(160, 180, 255, 0.14);
+        background: rgba(255, 255, 255, 0.07);
+        color: var(--text);
+        border-radius: 999px;
+        padding: 9px 14px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 24px rgba(0, 0, 0, 0.18);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease, filter 0.22s ease;
+      }
+
+      .header-primary-actions .secondary-btn {
+        padding: 11px 16px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #f3f7ff;
+        border-color: rgba(255,255,255,0.08);
+      }
+
+      .header-primary-actions .secondary-btn:first-child {
+        background: linear-gradient(135deg, rgba(88, 130, 255, 0.8), rgba(57, 96, 235, 0.82));
+      }
+
+      .header-primary-actions .secondary-btn:last-child {
+        background: linear-gradient(135deg, rgba(143, 116, 255, 0.78), rgba(95, 78, 214, 0.82));
+      }
+
+      .compact-btn {
+        padding: 7px 11px;
+        font-size: 0.74rem;
+        color: var(--muted);
+        background: rgba(255,255,255,0.04);
+      }
+
+      .secondary-btn:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(201, 216, 255, 0.2);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 26px rgba(0, 0, 0, 0.22);
+        filter: brightness(1.04);
+      }
+
+      .secondary-btn:active {
+        transform: translateY(0) scale(0.99);
+      }
+
+      .review-count {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 2px 6px 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .review-count > span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(17, 22, 38, 0.18);
+        border: 1px solid rgba(183, 196, 235, 0.08);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      }
+
+      .review-count > span::before {
+        display: inline-flex;
+        width: 18px;
+        height: 18px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(113, 129, 255, 0.15);
+        color: var(--text);
+        font-size: 0.72rem;
+      }
+
+      .review-count > span:first-child::before {
+        content: "✓";
+      }
+
+      .review-count > span:last-child::before {
+        content: "◎";
+      }
+
+      .review-count #dueCount,
+      .review-count #totalCount {
+        display: inline-block;
+        min-width: 1.4em;
+        font-size: 1.45rem;
+        font-weight: 800;
+        line-height: 1;
+        color: var(--text);
+      }
+
+      .card-scene {
+        width: 100%;
+        perspective: 1200px;
+        position: relative;
+      }
+
+      .card-scene::before {
+        content: "";
+        position: absolute;
+        inset: -20px -24px -18px;
+        background: radial-gradient(circle at center, rgba(130, 150, 255, 0.12), transparent 54%);
+        filter: blur(22px);
+        pointer-events: none;
+      }
+
+      .flashcard {
+        position: relative;
+        width: min(100%, 980px);
+        height: 330px;
+        margin: 0 auto;
+        cursor: pointer;
+        border-radius: 32px;
+        transform-style: preserve-3d;
+        transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.24s ease;
+        outline: none;
+      }
+
+      .flashcard::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 32px;
+        background:
+          linear-gradient(180deg, rgba(17, 22, 36, 0.22), rgba(17, 22, 36, 0.38)),
+          radial-gradient(circle at 20% 15%, rgba(126, 157, 255, 0.18), transparent 30%),
+          radial-gradient(circle at 80% 20%, rgba(144, 119, 255, 0.14), transparent 24%),
+          linear-gradient(135deg, rgba(22, 25, 40, 0.6), rgba(17, 22, 35, 0.74));
+        box-shadow: 0 26px 54px rgba(5, 9, 20, 0.42);
+        pointer-events: none;
+      }
+
+      .flashcard:focus-visible {
+        box-shadow: 0 0 0 3px rgba(120, 141, 255, 0.24);
+      }
+
+      .flashcard.is-flipped {
+        transform: rotateY(180deg);
+      }
+
+      .card-face {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 22px 22px 18px;
+        backface-visibility: hidden;
+        border-radius: 32px;
+        background:
+          linear-gradient(180deg, rgba(29, 34, 58, 0.82), rgba(18, 22, 38, 0.9)),
+          radial-gradient(circle at top, rgba(170, 185, 255, 0.08), transparent 35%);
+        border: 1px solid rgba(183, 196, 235, 0.12);
+        box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.05);
+        overflow: hidden;
+      }
+
+      .card-face::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, rgba(157, 167, 255, 0.08), transparent 52%);
+        pointer-events: none;
+      }
+
+      .card-front {
+        transform: rotateY(0deg);
+      }
+
+      .card-back {
+        transform: rotateY(180deg);
+      }
+
+      .front-inner,
+      .back-inner {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 1;
+      }
+
+      .front-inner {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .back-content {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 12px;
+        padding: 18px 10px;
+      }
+
+      .card-face .front-inner::before,
+      .card-face .back-inner::before {
+        content: "";
+        position: absolute;
+        inset: 14px 18px 14px 18px;
+        border-radius: 24px;
+        border: 1px solid rgba(167, 177, 215, 0.1);
+        pointer-events: none;
+      }
+
+      .card-face::after {
+        content: "1 / 11";
+        position: absolute;
+        top: 18px;
+        left: 20px;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(17, 19, 29, 0.26);
+        border: 1px solid rgba(196, 203, 230, 0.12);
+        color: rgba(232, 237, 249, 0.9);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+
+      .card-face .front-inner::after,
+      .card-face .back-inner::after {
+        content: "❮";
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(15, 19, 31, 0.32);
+        border: 1px solid rgba(196, 203, 230, 0.14);
+        color: rgba(233, 238, 255, 0.92);
+        font-size: 1.05rem;
+        box-shadow: 0 10px 20px rgba(15, 17, 31, 0.18);
+      }
+
+      .card-face .back-inner::after {
+        content: "❯";
+        left: auto;
+        right: 18px;
+      }
+
+      .word-text,
+      .meaning-text,
+      .example-en,
+      .example-cn {
+        width: 100%;
+        text-align: center;
+        line-height: 1.4;
+        margin: 0;
+        word-break: break-word;
+      }
+
+      .word-text {
+        font-size: clamp(2.6rem, 8vw, 4.2rem);
+        letter-spacing: 0.08em;
+        font-weight: 800;
+        color: #f7f7fb;
+        text-shadow: 0 10px 24px rgba(120, 139, 255, 0.18);
+      }
+
+      .card-image-wrap {
+        width: min(78%, 240px);
+        height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 22px;
+        overflow: hidden;
+        background: linear-gradient(135deg, rgba(154, 169, 255, 0.16), rgba(127, 100, 255, 0.1));
+        border: 1px solid rgba(183, 196, 235, 0.14);
+        box-shadow: 0 14px 28px rgba(46, 58, 92, 0.26);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .card-image-wrap:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 30px rgba(79, 124, 255, 0.12);
+      }
+
+      .card-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .meaning-text {
+        font-size: clamp(1.7rem, 5vw, 2.6rem);
+        letter-spacing: 0.04em;
+        font-weight: 700;
+      }
+
+      .back-word {
+        font-size: clamp(2.2rem, 7vw, 3.2rem);
+        letter-spacing: 0.04em;
+        font-weight: 800;
+        margin: 0;
+        word-break: break-word;
+        color: #f4f6ff;
+      }
+
+      .meta-block {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .meta-label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .meta-value {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #e9ebf8;
+        margin: 0;
+        word-break: break-word;
+      }
+
+      .example-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+      }
+
+      .example-en {
+        font-size: 1rem;
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      .example-cn {
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .speak-btn {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        width: 42px;
+        height: 42px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(143, 159, 255, 0.15);
+        color: #f4f7ff;
+        font-size: 1.35rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 20px rgba(50, 59, 100, 0.28), inset 0 1px 0 rgba(255,255,255,0.12);
+        transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, filter 0.22s ease;
+      }
+
+      .speak-btn:hover {
+        transform: translateY(-1px) scale(1.04);
+        background: rgba(143, 159, 255, 0.2);
+        box-shadow: 0 16px 24px rgba(60, 70, 120, 0.34), inset 0 1px 0 rgba(255,255,255,0.14);
+      }
+
+      .speak-btn:active {
+        transform: scale(0.98);
+      }
+
+      .actions {
+        width: 100%;
+        display: flex;
+        gap: 14px;
+        max-width: 980px;
+        margin: 0 auto;
+      }
+
+      .actions.hidden {
+        display: none;
+      }
+
+      .action-btn {
+        flex: 1;
+        border: none;
+        border-radius: 18px;
+        padding: 16px 18px;
+        color: #fff;
+        font-size: 1.08rem;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 12px 24px rgba(30, 41, 59, 0.12);
+        transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+      }
+
+      .action-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.04);
+        box-shadow: 0 16px 28px rgba(30, 41, 59, 0.15);
+      }
+
+      .action-btn:active {
+        transform: translateY(0);
+      }
+
+      .action-btn.good {
+        background: linear-gradient(135deg, #67d9a5, #2fbf85);
+        box-shadow: 0 12px 22px rgba(47, 191, 133, 0.28);
+      }
+
+      .action-btn.bad {
+        background: linear-gradient(135deg, #ff9c7a, #ef6a50);
+        box-shadow: 0 12px 22px rgba(239, 106, 80, 0.22);
+      }
+
+      .empty-state {
+        display: none;
+        width: 100%;
+        max-width: 980px;
+        text-align: center;
+        padding: 22px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--muted);
+        border: 1px dashed rgba(148, 163, 184, 0.5);
+        line-height: 1.6;
+      }
+
+      .study-quote {
+        width: min(100%, 980px);
+        margin: 8px auto 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        color: rgba(224, 230, 245, 0.8);
+        font-size: 0.98rem;
+      }
+
+      .study-quote::before,
+      .study-quote::after {
+        content: "";
+        display: block;
+        width: 26%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(182, 193, 234, 0.55), transparent);
+      }
+
+      .study-quote-text {
+        white-space: nowrap;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      .study-quote-note {
+        width: min(100%, 980px);
+        margin: 8px auto 0;
+        text-align: center;
+        color: rgba(184, 198, 227, 0.72);
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+      }
+
+      .empty-state.visible {
+        display: block;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(15, 23, 42, 0.38);
+        z-index: 100;
+      }
+
+      .modal.hidden {
+        display: none;
+      }
+
+      .modal-panel {
+        width: min(90vw, 720px);
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 24px;
+        box-shadow: 0 30px 70px rgba(15, 23, 42, 0.16);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        overflow: hidden;
+      }
+
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 20px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+      }
+
+      .modal-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+
+      .close-btn {
+        border: none;
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--muted);
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 1.2rem;
+      }
+
+      .library-form,
+      .import-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .library-form {
+        max-width: 560px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 18px 20px 6px;
+      }
+
+      .library-form .field-row {
+        display: flex;
+        gap: 12px;
+      }
+
+      .library-form .field-row > * {
+        flex: 1;
+      }
+
+      .library-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .field-row {
+        display: flex;
+        align-items: stretch;
+        gap: 10px;
+      }
+
+      .field-row > * {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .library-form input,
+      .library-form textarea,
+      .import-form input,
+      .import-form textarea {
+        width: 100%;
+        resize: vertical;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        padding: 12px 14px;
+        font-size: 0.92rem;
+        line-height: 1.6;
+        color: var(--text);
+        background: rgba(248, 250, 252, 0.9);
+        border-radius: 12px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      }
+
+      .library-form input:focus,
+      .library-form textarea:focus,
+      .import-form input:focus,
+      .import-form textarea:focus {
+        outline: none;
+        border-color: rgba(59, 130, 246, 0.9);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        background: #fff;
+      }
+
+      .library-form textarea,
+      .import-form textarea {
+        min-height: 86px;
+      }
+
+      .image-card-modal .modal-panel {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(241, 245, 249, 0.95));
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 24px;
+      }
+
+      .image-preview {
+        display: none;
+        padding: 8px 0 0;
+      }
+
+      .image-preview.visible {
+        display: block;
+      }
+
+      .image-preview img {
+        display: block;
+        width: 100%;
+        max-height: 180px;
+        object-fit: cover;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(248, 250, 252, 0.8);
+      }
+
+      .library-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 320px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .library-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 12px;
+        background: rgba(248, 250, 252, 0.8);
+      }
+
+      .library-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .library-word {
+        font-weight: 700;
+      }
+
+      .library-meaning {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .library-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .mini-btn {
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--primary-strong);
+        border-radius: 10px;
+        padding: 7px 10px;
+        font-size: 0.8rem;
+        cursor: pointer;
+      }
+
+      .mini-btn.danger {
+        color: var(--bad-strong);
+        border-color: rgba(249, 115, 22, 0.2);
+      }
+
+      .library-editor-row {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .library-editor-row input,
+      .library-editor-row textarea {
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 10px;
+        padding: 9px 10px;
+        font-size: 0.9rem;
+        background: #fff;
+      }
+
+      .library-editor-row textarea {
+        min-height: 72px;
+        resize: vertical;
+      }
+
+      .editor-body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 18px 20px 0;
+      }
+
+      .import-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 18px 20px 0;
+      }
+
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 18px 20px 20px;
+      }
+
+      @media (min-width: 980px) {
+        body {
+          padding: 56px 30px;
+        }
+
+        .app {
+          width: min(1200px, 92vw);
+          gap: 22px;
+        }
+
+        .topbar {
+          padding: 6px 10px 0;
+        }
+
+        .header-actions {
+          flex: 1;
+          justify-content: space-between;
+        }
+
+        .header-primary-actions {
+          flex: 1 1 auto;
+        }
+
+        .header-secondary-actions {
+          margin-left: 0;
+          padding-left: 0;
+          border-left: none;
+        }
+
+        .review-count {
+          width: min(100%, 980px);
+          margin: 0 auto;
+          padding-left: 0;
+        }
+
+        .flashcard {
+          height: 420px;
+        }
+
+        .card-face {
+          padding: 30px 28px 24px;
+        }
+
+        .speak-btn {
+          top: 22px;
+          right: 22px;
+        }
+
+        .card-face .front-inner::after,
+        .card-face .back-inner::after {
+          left: 22px;
+          width: 42px;
+          height: 42px;
+        }
+
+        .card-face .back-inner::after {
+          left: auto;
+          right: 22px;
+        }
+
+        .study-quote {
+          margin-top: 12px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .app {
+          width: min(94vw, 420px);
+        }
+
+        .flashcard {
+          height: 280px;
+        }
+
+        .speak-btn {
+          top: 12px;
+          right: 12px;
+          width: 40px;
+          height: 40px;
+        }
+
+        .action-btn {
+          padding: 14px 12px;
+        }
+
+        .field-row {
+          flex-direction: column;
+        }
+
+        .modal-actions {
+          flex-direction: column-reverse;
+        }
+
+        .modal-actions > * {
+          width: 100%;
+        }
+
+        .import-form {
+          padding-left: 14px;
+          padding-right: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="topbar">
+        <div class="title">
+          <div class="title-text">
+            <span class="title-main">单词小助手</span>
+            <span class="title-sub">每天一点，积累更大</span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="header-primary-actions">
+            <button id="newWordBtnTop" class="secondary-btn" type="button">新增单词卡片</button>
+            <button id="addImageCardBtn" class="secondary-btn" type="button">新增图片卡片</button>
+          </div>
+          <div class="header-secondary-actions">
+            <button id="editLibraryBtn" class="secondary-btn compact-btn" type="button">词库</button>
+            <button id="reviewAllBtn" class="secondary-btn compact-btn" type="button">复习全部单词</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-count">
+        <span>今日待复习：<span id="dueCount">0</span></span>
+        <span>词库总数：<span id="totalCount">0</span></span>
+      </div>
+
+      <div class="card-scene">
+        <div id="flashcard" class="flashcard" tabindex="0" aria-live="polite">
+          <div class="card-face card-front">
+            <div class="front-inner">
+              <button id="speakBtn" class="speak-btn" type="button" aria-label="发音">🔊</button>
+              <div id="cardImageWrap" class="card-image-wrap hidden">
+                <img id="cardImage" class="card-image" alt="图片卡片" />
+              </div>
+              <p id="wordText" class="word-text">word</p>
+            </div>
+          </div>
+
+          <div class="card-face card-back">
+            <div class="back-inner">
+              <div class="back-content">
+                <button id="backSpeakBtn" class="speak-btn" type="button" aria-label="发音">🔊</button>
+                <p id="backWord" class="back-word">word</p>
+
+                <div id="backImageWrap" class="card-image-wrap hidden">
+                  <img id="backImage" class="card-image" alt="图片卡片" />
+                </div>
+
+                <div id="englishBlock" class="meta-block hidden">
+                  <p id="englishText" class="meta-value"></p>
+                </div>
+
+                <div id="chineseBlock" class="meta-block hidden">
+                  <p id="chineseText" class="meta-value"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="study-quote">
+        <span class="study-quote-text">“今天的努力，明天的底气。”</span>
+      </div>
+      <div class="study-quote-note">休息一下，再继续加油哦 ✨</div>
+
+      <div id="reviewActions" class="actions" aria-label="复习操作">
+        <button id="rememberBtn" class="action-btn good" type="button">记得</button>
+        <button id="forgetBtn" class="action-btn bad" type="button">忘了</button>
+      </div>
+
+      <div id="emptyState" class="empty-state">
+        今天的单词已经复习完了，休息一下再来吧。
+      </div>
+    </div>
+
+    <div id="newWordModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="newWordModalTitle">
+        <div class="modal-header">
+          <h3 id="newWordModalTitle">新增单词</h3>
+          <button id="closeNewWordModalBtn" class="close-btn" type="button" aria-label="关闭">✕</button>
+        </div>
+
+        <div class="editor-body">
+          <div class="library-form">
+            <input id="newWordModalWordInput" type="hidden" />
+            <div class="field-row">
+              <input id="newWordModalEnglishInput" type="text" placeholder="英文" />
+              <input id="newWordModalChineseInput" type="text" placeholder="中文" />
+            </div>
+            <textarea id="newWordModalNoteInput" placeholder="备注（可选）"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="cancelNewWordModalBtn" class="secondary-btn" type="button">取消</button>
+          <button id="saveNewWordBtn" class="action-btn good" type="button">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="editorModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="editorModalTitle">
+        <div class="modal-header">
+          <h3 id="editorModalTitle">编辑词库</h3>
+          <button id="closeEditorBtn" class="close-btn" type="button" aria-label="关闭">✕</button>
+        </div>
+
+        <div class="editor-body">
+          <div id="libraryList" class="library-list"></div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="cancelLibraryBtn" class="secondary-btn" type="button">取消</button>
+          <button id="saveLibraryBtn" class="action-btn good" type="button">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="imageCardModal" class="modal hidden image-card-modal" aria-hidden="true">
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="imageCardModalTitle">
+        <div class="modal-header">
+          <h3 id="imageCardModalTitle">添加图片卡片</h3>
+          <button id="closeImageCardBtn" class="close-btn" type="button" aria-label="关闭">✕</button>
+        </div>
+
+        <div class="import-form">
+          <input id="imageCardFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/jpg" />
+          <div id="imageCardPreviewWrap" class="image-preview" aria-live="polite">
+            <img id="imageCardPreview" alt="图片预览" />
+          </div>
+          <div class="field-row">
+            <input id="imageCardEnglishInput" type="text" placeholder="英文名" />
+            <input id="imageCardChineseInput" type="text" placeholder="中文名" />
+          </div>
+          <textarea id="imageCardNoteInput" placeholder="备注：写下任何想记的说明或联想…"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button id="cancelImageCardBtn" class="secondary-btn" type="button">取消</button>
+          <button id="saveImageCardBtn" class="action-btn good" type="button">保存卡片</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const STORAGE_KEY = 'flashcard-words-v1';
+
+        function formatDate(date) {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+
+        function parseDate(dateString) {
+          const normalized = String(dateString || '').trim();
+          if (!normalized) return 0;
+          const [year, month, day] = normalized.split('-').map(Number);
+          return new Date(year, month - 1, day).getTime();
+        }
+
+        function addDays(date, days) {
+          const next = new Date(date);
+          next.setDate(next.getDate() + days);
+          return next;
+        }
+
+        function getTodayString() {
+          return formatDate(new Date());
+        }
+
+        function inferPartOfSpeech(word) {
+          const value = String(word || '').trim().toLowerCase();
+          if (!value) return 'n.';
+          if (/(tion|sion|ment|ness|ity|ism|ance|ence|ship|hood|age|ure|er|or)$/i.test(value)) return 'n.';
+          if (/(ate|ify|ize|ise|en|ize)$/i.test(value)) return 'v.';
+          if (/(al|ful|ous|ive|less|ic|ary|ible|able|ant|ent|ish)$/i.test(value)) return 'adj.';
+          if (/(ly)$/i.test(value)) return 'adv.';
+          if (/(in|on|at|for|with|from|of|to|by|about|after|before)$/i.test(value)) return 'prep.';
+          return 'n.';
+        }
+
+        function generateAutoMeaning(word) {
+          const pos = inferPartOfSpeech(word);
+          const labelMap = {
+            'n.': '名词',
+            'v.': '动词',
+            'adj.': '形容词',
+            'adv.': '副词',
+            'prep.': '介词',
+            'pron.': '代词',
+            'conj.': '连词',
+            'interj.': '感叹词'
+          };
+          const label = labelMap[pos] || '词';
+          return { pos, meaning: `${label}` };
+        }
+
+        function getDisplayMeaning(card) {
+          if (!card) return '';
+          const pos = String(card.pos || '').trim();
+          const meaning = String(card.meaning || '').trim();
+          const word = String(card.word || '').trim();
+
+          if (!meaning && !word) return '';
+          if (pos && meaning) return `${pos} ${meaning}`;
+          if (pos && word && !meaning) return pos;
+          return meaning;
+        }
+
+        function normalizeCard(card, index) {
+          const isImageCard = !!(card && card.type === 'image');
+          const rawWord = typeof card?.word === 'string' ? card.word : '';
+          const rawEnglish = typeof card?.english === 'string' ? card.english.trim() : '';
+          const rawChinese = typeof card?.chinese === 'string' ? card.chinese.trim() : '';
+          const rawMeaning = typeof card?.meaning === 'string' ? card.meaning.trim() : '';
+          const sentence = typeof card?.sentence === 'string' ? card.sentence.trim() : '';
+          const sentenceCn = typeof card?.sentenceCn === 'string' ? card.sentenceCn.trim() : '';
+          const baseWord = isImageCard
+            ? (rawWord !== '' ? rawWord : (card && card.word === undefined ? `image-${index + 1}` : ''))
+            : (rawWord || `word-${index + 1}`);
+          const boxValue = Number(card && card.box !== undefined ? card.box : 1);
+          const nextReviewDate = String(card && card.nextReviewDate ? card.nextReviewDate : getTodayString());
+          const existingPos = typeof card?.pos === 'string' ? card.pos.trim() : '';
+          const inferredPos = existingPos || inferPartOfSpeech(baseWord || rawEnglish || rawChinese || rawMeaning);
+          const chineseValue = rawChinese || rawMeaning || '';
+          const englishValue = rawEnglish || baseWord || '';
+
+          return {
+            id: card && card.id ? card.id : `word-${Date.now()}-${index + 1}`,
+            type: isImageCard ? 'image' : 'word',
+            word: String(baseWord).trim(),
+            english: englishValue,
+            chinese: chineseValue,
+            meaning: chineseValue,
+            pos: inferredPos,
+            sentence,
+            sentenceCn,
+            imageDataUrl: isImageCard ? String(card.imageDataUrl || '') : '',
+            pronunciation: isImageCard ? String(card.pronunciation || '').trim() : '',
+            box: Number.isFinite(boxValue) ? Math.min(Math.max(Math.round(boxValue), 1), 5) : 1,
+            nextReviewDate
+          };
+        }
+
+        function loadDefaultWords() {
+          const today = getTodayString();
+          const list = [
+            { word: 'abandon', meaning: '放弃；抛弃', sentence: 'She decided to abandon the old plan.', sentenceCn: '她决定放弃旧计划。', box: 1, nextReviewDate: today },
+            { word: 'acquire', meaning: '获得；学到', sentence: 'We acquire knowledge through study and practice.', sentenceCn: '我们通过学习和实践获得知识。', box: 1, nextReviewDate: today },
+            { word: 'analyze', meaning: '分析', sentence: 'The scientist will analyze the data carefully.', sentenceCn: '科学家会仔细分析这些数据。', box: 1, nextReviewDate: today },
+            { word: 'approach', meaning: '方法；接近', sentence: 'This approach is effective for beginners.', sentenceCn: '这种方法对初学者很有效。', box: 1, nextReviewDate: today },
+            { word: 'benefit', meaning: '利益；受益', sentence: 'Regular exercise has many health benefits.', sentenceCn: '定期锻炼有很多健康益处。', box: 1, nextReviewDate: today },
+            { word: 'concentrate', meaning: '集中注意力', sentence: 'Please concentrate on the speaker for a moment.', sentenceCn: '请暂时集中注意力听讲。', box: 1, nextReviewDate: today },
+            { word: 'create', meaning: '创造', sentence: 'Artists create work that inspires people.', sentenceCn: '艺术家创造激励他人的作品。', box: 1, nextReviewDate: today },
+            { word: 'discover', meaning: '发现', sentence: 'Scientists discovered a new planet last year.', sentenceCn: '科学家去年发现了一颗新行星。', box: 1, nextReviewDate: today },
+            { word: 'expand', meaning: '扩大；扩展', sentence: 'The company plans to expand its business abroad.', sentenceCn: '公司计划扩大海外业务。', box: 1, nextReviewDate: today },
+            { word: 'improve', meaning: '改善；提高', sentence: 'Practice can improve your pronunciation quickly.', sentenceCn: '练习可以快速提高你的发音。', box: 1, nextReviewDate: today }
+          ];
+
+          return list.map((item, index) => ({
+            id: `word-${index + 1}`,
+            type: 'word',
+            word: item.word,
+            meaning: item.meaning,
+            sentence: item.sentence,
+            sentenceCn: item.sentenceCn,
+            imageDataUrl: '',
+            pronunciation: '',
+            box: item.box,
+            nextReviewDate: item.nextReviewDate
+          }));
+        }
+
+        function loadWords() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) {
+              const defaultWords = loadDefaultWords();
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultWords));
+              return defaultWords;
+            }
+
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) {
+              throw new Error('words is not array');
+            }
+
+            return parsed.map((item, index) => normalizeCard(item, index));
+          } catch (error) {
+            const defaultWords = loadDefaultWords();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultWords));
+            return defaultWords;
+          }
+        }
+
+        function saveWords() {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.words));
+        }
+
+        function getCardSpeechText(card) {
+          if (!card) return '';
+          return String(card.word || '').trim();
+        }
+
+        function speakWord(word) {
+          if (!('speechSynthesis' in window) || !word) {
+            return;
+          }
+
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(word);
+          utterance.lang = 'en-US';
+          utterance.rate = 1.0;
+          window.speechSynthesis.speak(utterance);
+        }
+
+        function getDueCards() {
+          const today = parseDate(getTodayString());
+          return state.words
+            .filter((card) => parseDate(card.nextReviewDate) <= today)
+            .sort((a, b) => parseDate(a.nextReviewDate) - parseDate(b.nextReviewDate));
+        }
+
+        function getBoxInterval(box) {
+          const intervals = { 1: 1, 2: 2, 3: 4, 4: 7, 5: 14 };
+          return intervals[Math.min(Math.max(box, 1), 5)] || 14;
+        }
+
+        function calculateNextReviewDate(box) {
+          return formatDate(addDays(new Date(), getBoxInterval(box)));
+        }
+
+        function updateDueCount() {
+          const queue = state.reviewAllMode ? state.reviewAllQueue.slice() : getDueCards();
+          dueCount.textContent = String(queue.length);
+          totalCount.textContent = String(state.words.length);
+          return queue;
+        }
+
+        function renderCard() {
+          const card = state.currentCard;
+          reviewActions.classList.toggle('hidden', !card);
+          flashcard.classList.toggle('is-flipped', state.isFlipped && !!card);
+
+          if (!card) {
+            wordText.textContent = '已完成';
+            backWord.textContent = '已完成';
+            englishBlock.classList.add('hidden');
+            chineseBlock.classList.add('hidden');
+            cardImageWrap.classList.add('hidden');
+            backImageWrap.classList.add('hidden');
+            cardImage.src = '';
+            backImage.src = '';
+            emptyState.classList.add('visible');
+            return;
+          }
+
+          emptyState.classList.remove('visible');
+          const isImageCard = card.type === 'image';
+          const english = String(card.english || card.word || '').trim();
+          const chinese = String(card.chinese || card.meaning || '').trim();
+          const imageUrl = String(card.imageDataUrl || '').trim();
+
+          if (isImageCard && imageUrl) {
+            wordText.textContent = '';
+            cardImageWrap.classList.remove('hidden');
+            cardImage.src = imageUrl;
+          } else {
+            wordText.textContent = english || '未命名';
+            cardImageWrap.classList.add('hidden');
+            cardImage.src = '';
+          }
+
+          backWord.textContent = english || '未命名';
+          englishText.textContent = '';
+          chineseText.textContent = chinese;
+
+          if (isImageCard && imageUrl) {
+            backImageWrap.classList.toggle('hidden', !imageUrl);
+            backImage.src = imageUrl;
+          } else {
+            backImageWrap.classList.add('hidden');
+            backImage.src = '';
+          }
+
+          if (state.isFlipped) {
+            englishBlock.classList.add('hidden');
+            chineseBlock.classList.toggle('hidden', !chinese);
+          } else {
+            englishBlock.classList.add('hidden');
+            chineseBlock.classList.add('hidden');
+          }
+
+          flashcard.setAttribute('aria-label', state.isFlipped ? `背面：${english || card.word}` : `正面：${english || card.word}`);
+        }
+
+        function loadNextCard() {
+          const queue = updateDueCount();
+          state.currentCard = queue[0] || null;
+          state.isFlipped = false;
+          renderCard();
+        }
+
+        function handleReview(remembered) {
+          if (!state.currentCard) return;
+
+          const card = state.currentCard;
+          if (remembered) {
+            card.box = Math.min(card.box + 1, 5);
+            card.nextReviewDate = calculateNextReviewDate(card.box);
+          } else {
+            card.box = 1;
+            card.nextReviewDate = formatDate(addDays(new Date(), 1));
+          }
+
+          saveWords();
+
+          if (state.reviewAllMode) {
+            const idx = state.reviewAllQueue.indexOf(card);
+            if (idx >= 0) state.reviewAllQueue.splice(idx, 1);
+            state.currentCard = state.reviewAllQueue[0] || null;
+          } else {
+            state.currentCard = getDueCards()[0] || null;
+          }
+
+          state.isFlipped = false;
+          renderCard();
+        }
+
+        function openReviewAllMode() {
+          state.reviewAllMode = !state.reviewAllMode;
+          state.reviewAllQueue = state.reviewAllMode ? state.words.slice() : [];
+          loadNextCard();
+        }
+
+        function escapeHtml(value) {
+          return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        }
+
+        function renderLibraryEditor() {
+          libraryList.innerHTML = state.libraryDraft.map((item) => {
+            const wordText = item.word || '未命名';
+            const meaningText = item.meaning || (item.type === 'image' ? '请输入中文名' : '请输入中文释义');
+
+            if (item._editing) {
+              if (item.type === 'image') {
+                return `
+                  <div class="library-row">
+                    <div class="library-editor-row">
+                      ${item.imageDataUrl ? `<img src="${item.imageDataUrl}" alt="${escapeHtml(item.word || '')}" style="max-height:120px; width:100%; object-fit:cover; border-radius:10px; border:1px solid rgba(148,163,184,0.2);" />` : ''}
+                      <div class="field-row">
+                        <input data-role="edit-image-word" value="${escapeHtml(item.word || '')}" placeholder="英文名" />
+                        <input data-role="edit-image-cn" value="${escapeHtml(item.meaning || '')}" placeholder="中文名" />
+                      </div>
+                      <div class="library-actions">
+                        <button class="mini-btn" data-action="confirm-edit" data-id="${item.id}">确认</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }
+
+              return `
+                <div class="library-row">
+                  <div class="library-editor-row">
+                    <input data-role="edit-word" value="${escapeHtml(item.word || '')}" placeholder="英文单词" />
+                    <input data-role="edit-meaning" value="${escapeHtml(item.meaning || '')}" placeholder="中文释义" />
+                    <div class="library-actions">
+                      <button class="mini-btn" data-action="confirm-edit" data-id="${item.id}">确认</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+
+            if (item.type === 'image') {
+              return `
+                <div class="library-row">
+                  <div class="library-main" style="display:flex; flex-direction:column; gap:8px;">
+                    ${item.imageDataUrl ? `<img src="${item.imageDataUrl}" alt="${escapeHtml(wordText)}" style="width:100%; max-height:120px; object-fit:cover; border-radius:10px; border:1px solid rgba(148,163,184,0.2);" />` : ''}
+                    <div class="library-word">${escapeHtml(wordText)}</div>
+                    <div class="library-meaning">${escapeHtml(meaningText)}</div>
+                    ${item.sentence ? `<div class="library-meaning">${escapeHtml(item.sentence)}</div>` : ''}
+                  </div>
+                  <div class="library-actions">
+                    <button class="mini-btn" data-action="edit" data-id="${item.id}">编辑</button>
+                    <button class="mini-btn danger" data-action="delete" data-id="${item.id}">删除</button>
+                  </div>
+                </div>
+              `;
+            }
+
+            return `
+              <div class="library-row">
+                <div class="library-main">
+                  <div class="library-word">${escapeHtml(wordText)}</div>
+                  <div class="library-meaning">${escapeHtml(meaningText)}</div>
+                </div>
+                <div class="library-actions">
+                  <button class="mini-btn" data-action="edit" data-id="${item.id}">编辑</button>
+                  <button class="mini-btn danger" data-action="delete" data-id="${item.id}">删除</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        function openLibraryEditor() {
+          state.libraryDraft = state.words.map((item) => ({ ...item, _editing: false }));
+          renderLibraryEditor();
+          editorModal.classList.remove('hidden');
+          editorModal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeLibraryEditor() {
+          editorModal.classList.add('hidden');
+          editorModal.setAttribute('aria-hidden', 'true');
+        }
+
+        function saveLibrary() {
+          state.words = state.libraryDraft.map((item) => {
+            const cleanItem = { ...item };
+            delete cleanItem._editing;
+            return normalizeCard(cleanItem, 0);
+          });
+          saveWords();
+          if (state.reviewAllMode) state.reviewAllQueue = state.words.slice();
+          closeLibraryEditor();
+          loadNextCard();
+        }
+
+        function saveNewWordFromModal() {
+          const english = String(newWordModalEnglishInput.value || '').trim();
+          const chinese = String(newWordModalChineseInput.value || '').trim();
+          const note = String(newWordModalNoteInput.value || '').trim();
+          const word = String(newWordModalWordInput.value || english).trim();
+
+          if (!english) {
+            alert('英文不能为空。');
+            return;
+          }
+
+          state.words.unshift(normalizeCard({
+            id: `word-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+            type: 'word',
+            word: word || english,
+            english: english || word,
+            chinese: chinese || '',
+            meaning: chinese || '',
+            sentence: note || '',
+            sentenceCn: '',
+            imageDataUrl: '',
+            pronunciation: '',
+            box: 1,
+            nextReviewDate: getTodayString()
+          }, 0));
+
+          saveWords();
+          if (state.reviewAllMode) state.reviewAllQueue = state.words.slice();
+          closeNewWordModal();
+          loadNextCard();
+        }
+
+        function openNewWordModal() {
+          newWordModal.classList.remove('hidden');
+          newWordModal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeNewWordModal() {
+          newWordModal.classList.add('hidden');
+          newWordModal.setAttribute('aria-hidden', 'true');
+          newWordModalWordInput.value = '';
+          newWordModalEnglishInput.value = '';
+          newWordModalChineseInput.value = '';
+          newWordModalNoteInput.value = '';
+        }
+
+        function compressImageDataUrl(dataUrl, maxWidth = 800, quality = 0.7) {
+          return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => {
+              const canvas = document.createElement('canvas');
+              const ratio = maxWidth / Math.max(image.width, 1);
+              const width = Math.min(image.width, maxWidth);
+              const height = Math.max(Math.round(image.height * ratio), 1);
+              canvas.width = width;
+              canvas.height = height;
+              const context = canvas.getContext('2d');
+              context.fillStyle = '#ffffff';
+              context.fillRect(0, 0, width, height);
+              context.drawImage(image, 0, 0, width, height);
+              resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            image.onerror = () => reject(new Error('图片读取失败。'));
+            image.src = dataUrl;
+          });
+        }
+
+        function readFileAsDataUrl(file) {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ''));
+            reader.onerror = () => reject(new Error('图片读取失败。'));
+            reader.readAsDataURL(file);
+          });
+        }
+
+        function updateImagePreview() {
+          const file = imageCardFileInput.files && imageCardFileInput.files[0];
+          if (!file) {
+            imageCardPreviewWrap.classList.remove('visible');
+            imageCardPreview.src = '';
+            return;
+          }
+
+          const objectUrl = URL.createObjectURL(file);
+          imageCardPreview.src = objectUrl;
+          imageCardPreviewWrap.classList.add('visible');
+
+          imageCardPreview.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+          };
+        }
+
+        async function saveImageCard() {
+          const file = imageCardFileInput.files && imageCardFileInput.files[0];
+          const englishName = String(imageCardEnglishInput.value || '').trim();
+          const chineseName = String(imageCardChineseInput.value || '').trim();
+          const note = String(imageCardNoteInput.value || '').trim();
+
+          if (!file) {
+            alert('请选择一张图片。');
+            return;
+          }
+
+          try {
+            const rawDataUrl = await readFileAsDataUrl(file);
+            const compressed = await compressImageDataUrl(rawDataUrl, 800, 0.7);
+            const card = normalizeCard({
+              id: `image-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+              type: 'image',
+              word: englishName,
+              meaning: chineseName,
+              pos: inferPartOfSpeech(englishName),
+              sentence: note,
+              sentenceCn: '',
+              imageDataUrl: compressed,
+              pronunciation: '',
+              box: 1,
+              nextReviewDate: getTodayString()
+            }, 0);
+
+            state.words.push(card);
+            saveWords();
+            if (state.reviewAllMode) state.reviewAllQueue = state.words.slice();
+            closeImageCardModal();
+            loadNextCard();
+          } catch (error) {
+            alert(error?.message || '图片保存失败。');
+          }
+        }
+
+        function openImageCardModal() {
+          imageCardModal.classList.remove('hidden');
+          imageCardModal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeImageCardModal() {
+          imageCardModal.classList.add('hidden');
+          imageCardModal.setAttribute('aria-hidden', 'true');
+          imageCardFileInput.value = '';
+          imageCardEnglishInput.value = '';
+          imageCardChineseInput.value = '';
+          imageCardNoteInput.value = '';
+          imageCardPreviewWrap.classList.remove('visible');
+          imageCardPreview.src = '';
+        }
+
+        const state = {
+          words: loadWords(),
+          currentCard: null,
+          isFlipped: false,
+          reviewAllMode: false,
+          reviewAllQueue: [],
+          libraryDraft: []
+        };
+
+        const dueCount = document.getElementById('dueCount');
+        const totalCount = document.getElementById('totalCount');
+        const reviewActions = document.getElementById('reviewActions');
+        const flashcard = document.getElementById('flashcard');
+        const wordText = document.getElementById('wordText');
+        const backWord = document.getElementById('backWord');
+        const englishBlock = document.getElementById('englishBlock');
+        const englishText = document.getElementById('englishText');
+        const chineseBlock = document.getElementById('chineseBlock');
+        const chineseText = document.getElementById('chineseText');
+        const sentenceBlock = document.getElementById('sentenceBlock');
+        const sentenceText = document.getElementById('sentenceText');
+        const emptyState = document.getElementById('emptyState');
+        const rememberBtn = document.getElementById('rememberBtn');
+        const forgetBtn = document.getElementById('forgetBtn');
+        const speakBtn = document.getElementById('speakBtn');
+        const backSpeakBtn = document.getElementById('backSpeakBtn');
+        const newWordBtnTop = document.getElementById('newWordBtnTop');
+        const reviewAllBtn = document.getElementById('reviewAllBtn');
+        const addImageCardBtn = document.getElementById('addImageCardBtn');
+        const editLibraryBtn = document.getElementById('editLibraryBtn');
+        const newWordModal = document.getElementById('newWordModal');
+        const closeNewWordModalBtn = document.getElementById('closeNewWordModalBtn');
+        const cancelNewWordModalBtn = document.getElementById('cancelNewWordModalBtn');
+        const saveNewWordBtn = document.getElementById('saveNewWordBtn');
+        const newWordModalWordInput = document.getElementById('newWordModalWordInput');
+        const newWordModalEnglishInput = document.getElementById('newWordModalEnglishInput');
+        const newWordModalChineseInput = document.getElementById('newWordModalChineseInput');
+        const newWordModalNoteInput = document.getElementById('newWordModalNoteInput');
+        const editorModal = document.getElementById('editorModal');
+        const libraryList = document.getElementById('libraryList');
+        const saveLibraryBtn = document.getElementById('saveLibraryBtn');
+        const cancelLibraryBtn = document.getElementById('cancelLibraryBtn');
+        const closeEditorBtn = document.getElementById('closeEditorBtn');
+        const imageCardModal = document.getElementById('imageCardModal');
+        const closeImageCardBtn = document.getElementById('closeImageCardBtn');
+        const cancelImageCardBtn = document.getElementById('cancelImageCardBtn');
+        const saveImageCardBtn = document.getElementById('saveImageCardBtn');
+        const imageCardFileInput = document.getElementById('imageCardFileInput');
+        const imageCardEnglishInput = document.getElementById('imageCardEnglishInput');
+        const imageCardChineseInput = document.getElementById('imageCardChineseInput');
+        const imageCardNoteInput = document.getElementById('imageCardNoteInput');
+        const imageCardPreviewWrap = document.getElementById('imageCardPreviewWrap');
+        const imageCardPreview = document.getElementById('imageCardPreview');
+        const cardImageWrap = document.getElementById('cardImageWrap');
+        const cardImage = document.getElementById('cardImage');
+        const backImageWrap = document.getElementById('backImageWrap');
+        const backImage = document.getElementById('backImage');
+
+        flashcard.addEventListener('click', function (event) {
+          if (event.target.closest('button')) return;
+          if (!state.currentCard) return;
+          state.isFlipped = !state.isFlipped;
+          renderCard();
+        });
+
+        speakBtn.addEventListener('click', function (event) {
+          event.stopPropagation();
+          if (state.currentCard) speakWord(getCardSpeechText(state.currentCard));
+        });
+
+        backSpeakBtn.addEventListener('click', function (event) {
+          event.stopPropagation();
+          if (state.currentCard) speakWord(getCardSpeechText(state.currentCard));
+        });
+
+        rememberBtn.addEventListener('click', function () {
+          handleReview(true);
+        });
+
+        forgetBtn.addEventListener('click', function () {
+          handleReview(false);
+        });
+
+        newWordBtnTop.addEventListener('click', openNewWordModal);
+        reviewAllBtn.addEventListener('click', openReviewAllMode);
+        addImageCardBtn.addEventListener('click', openImageCardModal);
+        editLibraryBtn.addEventListener('click', openLibraryEditor);
+        closeNewWordModalBtn.addEventListener('click', closeNewWordModal);
+        cancelNewWordModalBtn.addEventListener('click', closeNewWordModal);
+        saveNewWordBtn.addEventListener('click', saveNewWordFromModal);
+        closeEditorBtn.addEventListener('click', closeLibraryEditor);
+        cancelLibraryBtn.addEventListener('click', closeLibraryEditor);
+        saveLibraryBtn.addEventListener('click', saveLibrary);
+        imageCardFileInput.addEventListener('change', updateImagePreview);
+        closeImageCardBtn.addEventListener('click', closeImageCardModal);
+        cancelImageCardBtn.addEventListener('click', closeImageCardModal);
+        saveImageCardBtn.addEventListener('click', saveImageCard);
+
+        libraryList.addEventListener('click', function (event) {
+          const target = event.target.closest('[data-action]');
+          if (!target) return;
+          const { action, id } = target.dataset;
+          const item = state.libraryDraft.find((entry) => entry.id === id);
+          if (!item) return;
+
+          if (action === 'delete') {
+            state.libraryDraft = state.libraryDraft.filter((entry) => entry.id !== id);
+            renderLibraryEditor();
+            return;
+          }
+
+          if (action === 'edit') {
+            state.libraryDraft = state.libraryDraft.map((entry) => ({ ...entry, _editing: entry.id === id }));
+            renderLibraryEditor();
+            return;
+          }
+
+          if (action === 'confirm-edit') {
+            const row = target.closest('.library-row');
+            if (item.type === 'image') {
+              const word = row.querySelector('[data-role="edit-image-word"]').value.trim();
+              const meaning = row.querySelector('[data-role="edit-image-cn"]').value.trim();
+
+              state.libraryDraft = state.libraryDraft.map((entry) => {
+                if (entry.id !== id) return { ...entry, _editing: false };
+                return { ...entry, word, meaning, pronunciation: word || '', _editing: false };
+              });
+              renderLibraryEditor();
+              return;
+            }
+
+            const word = row.querySelector('[data-role="edit-word"]').value.trim();
+            const rawMeaning = row.querySelector('[data-role="edit-meaning"]').value.trim();
+
+            if (!word) {
+              alert('英文单词不能为空。');
+              return;
+            }
+
+            const { pos, meaning } = rawMeaning ? { pos: inferPartOfSpeech(word), meaning: rawMeaning } : generateAutoMeaning(word);
+
+            state.libraryDraft = state.libraryDraft.map((entry) => {
+              if (entry.id !== id) return { ...entry, _editing: false };
+              return { ...entry, word, meaning, pos, _editing: false };
+            });
+            renderLibraryEditor();
+          }
+        });
+
+        newWordModal.addEventListener('click', function (event) {
+          if (event.target === newWordModal) closeNewWordModal();
+        });
+
+        editorModal.addEventListener('click', function (event) {
+          if (event.target === editorModal) closeLibraryEditor();
+        });
+
+        imageCardModal.addEventListener('click', function (event) {
+          if (event.target === imageCardModal) closeImageCardModal();
+        });
+
+        document.addEventListener('keydown', function (event) {
+          const tagName = (event.target && event.target.tagName) || '';
+          if (event.code === 'Space' && tagName !== 'BUTTON' && tagName !== 'INPUT' && tagName !== 'TEXTAREA') {
+            event.preventDefault();
+            if (state.currentCard) {
+              state.isFlipped = !state.isFlipped;
+              renderCard();
+            }
+          }
+
+          if (event.key === 'Escape') {
+            if (!newWordModal.classList.contains('hidden')) closeNewWordModal();
+            if (!editorModal.classList.contains('hidden')) closeLibraryEditor();
+            if (!imageCardModal.classList.contains('hidden')) closeImageCardModal();
+          }
+        });
+
+        loadNextCard();
+      })();
+    </script>
+  </body>
+</html>
